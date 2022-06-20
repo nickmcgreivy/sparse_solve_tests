@@ -387,7 +387,7 @@ def get_kernel(order):
 
 def get_V_sp_K_T_M(nx, ny, order):
 
-	basedir='/Users/nmcgreiv/research/thesis/pde_runtime_comparisons/sparse_solve_tests'
+	basedir='/home/mcgreivy/sparse_solve_tests'
 	Lx = Ly = 1.0
 
 	N_global_elements, M, T = load_assembly_matrix(basedir, nx, ny, order)
@@ -489,15 +489,17 @@ def main():
 			print("{} milliseconds".format((t2 - t1) * 10e3))
 
 
+	from jax.lib import xla_bridge
+	print(xla_bridge.get_backend().platform)
 
 	#### Test custom LU solve
-	custom_solve = get_custom_poisson_solver(V_sp)
+	#custom_solve = get_custom_poisson_solver(V_sp)
 	gmres_solve = get_gmres_solver(V_sp)
 	cg_solve = get_cg_solver(V_sp)
 	bicgstab_solve = get_bicgstab_solver(V_sp)
 
-	print("Custom solve")
-	print_output(key, custom_solve)
+	#print("Custom solve")
+	#print_output(key, custom_solve)
 
 	print("gmres")
 	print_output(key, gmres_solve)
@@ -508,7 +510,15 @@ def main():
 	print("bicgstab")
 	print_output(key, bicgstab_solve)
 
-
+	X = jnp.ones((1000,1000))
+	@jax.jit
+	def f(x):
+		return x @ x
+	Y = f(X).block_until_ready()
+	t1 = time.time()
+	Y = f(X).block_until_ready()
+	t2 = time.time()
+	print("{} milliseconds for matmul".format((t2 - t1)*1000))
 
 if __name__ == '__main__':
 	main()
